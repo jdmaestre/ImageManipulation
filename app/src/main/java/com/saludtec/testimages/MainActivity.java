@@ -2,6 +2,14 @@ package com.saludtec.testimages;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -11,9 +19,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -24,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private String TAG = MainActivity.class.getSimpleName();
     float angle_aux = 0;
     float currentAngle_aux = 0;
+    float auxRotation = 0;
 
     float zoomAuxX = 0;
     float zoomAuxY = 0;
@@ -32,6 +43,17 @@ public class MainActivity extends AppCompatActivity {
     float currentX = 0;
     float prevY = 0;
     float currentY = 0;
+
+    int pivX= 0;
+    int pivY=0;
+
+    float fingerOneX = -1;
+    float fingerOneY = -1;
+    float fingerTowX = -1;
+    float fingerTowY = -1;
+    float prevXmove = -1;
+
+    boolean moveEneable = true;
 
     private int mHeingh = 0;
 
@@ -48,8 +70,14 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ImageView imB = (ImageView) findViewById(R.id.imageView_back);
+        Intent intent = new Intent(this, MTControllerActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        //startActivity(intent);
+
+        final ImageView imB = (ImageView) findViewById(R.id.imageView_back);
         final ImageView imF = (ImageView) findViewById(R.id.imageView_front);
+        final Matrix matrix = new Matrix();
         final int[] fromdegrees = {0};
         final int[] todegrees = {90};
 
@@ -60,6 +88,15 @@ public class MainActivity extends AppCompatActivity {
         final float[] toX = {1};
         final float[] fromY = {1};
         final float[] toY = {1};
+
+        final Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.chelsea);
+        double x = bitmap.getHeight();
+        final float imageWidth = (float) x;
+        double y = bitmap.getWidth();
+        final float imageHeight = (float) y;
+        double z = Math.sqrt ((x*x) + (y*y));
+        final float ivSize = (float) z;
+        int lado = (int) Math.round(z);
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -75,6 +112,15 @@ public class MainActivity extends AppCompatActivity {
                 toX[0] = (float) (toX[0] + 0.1);
                 fromY[0] = toY[0];
                 toY[0] = (float) (toY[0] + 0.1);
+                rotate(0, 90, imF);
+
+                double x = imF.getHeight();
+                double y = imF.getWidth();
+                double z = Math.sqrt ((x*x) + (y*y));
+                int lado = (int) Math.round(z);
+
+                imF.getLayoutParams().height = lado + 1;
+                imF.getLayoutParams().width = lado +1;
 
 
 
@@ -87,12 +133,8 @@ public class MainActivity extends AppCompatActivity {
 
                 final int index = event.getActionIndex();
                 int id = 0;
-                float fingerOneX = -1;
-                float fingerOneY = -1;
-                float fingerTowX = -1;
-                float fingerTowY = -1;
-                final int action = event.getActionMasked();
 
+                final int action = event.getActionMasked();
 
 
                 //Para conseguir la posicion de los dedos
@@ -105,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
                     if (id == 0) {
                         fingerOneX = event.getX(pointerIndex);
                         fingerOneY = event.getY(pointerIndex);
+
 
                     }
 
@@ -120,16 +163,19 @@ public class MainActivity extends AppCompatActivity {
 
                     //Log.d(TAG, String.valueOf(id));
                     //Log.d(TAG, actionToString(action));
-                    final float xc = imF.getWidth() / 2;
-                    final float yc = imF.getHeight() / 2;
+                    final int xc = imF.getWidth() / 2;
+                    final int yc = imF.getHeight() / 2;
 
 
-                    switch (action){
+                    switch (action) {
                         case MotionEvent.ACTION_POINTER_DOWN:
 
                             //Usado para la rotacion
                             mCurrAngle[0] = Math.toDegrees(Math.atan2(fingerTowX - xc, yc - fingerTowY));
-                            angle_aux = (float) (mCurrAngle[0] );
+                            angle_aux = (float) (mCurrAngle[0]);
+
+                            pivX = (int) (xc);
+                            pivY = (int) (yc);
 
                             //Usado para el zoom
                             zoomAuxX = fingerTowX;
@@ -138,24 +184,41 @@ public class MainActivity extends AppCompatActivity {
                             //Usado para scale
                             mLastScaleFactor = 0;
                             mTouchY = fingerTowY;
-
-                            //mHeingh = imF.getLayoutParams().height;
                             mHeingh = imF.getHeight();
+
+                            //Usado para el movimiento
+                            moveEneable = false;
                             break;
 
                         case MotionEvent.ACTION_MOVE:
 
                             //Usado para la rotacion
 
+
                             mCurrAngle[0] = Math.toDegrees(Math.atan2(fingerTowX - xc, yc - fingerTowY));
                             currentAngle_aux = (float) (mCurrAngle[0] - angle_aux);
-                            animate(currentAngle_aux, currentAngle_aux, 0, imF);
+                            //Matrix matrix = new Matrix();
+
+                            //matrix.setRotate((float) (currentAngle_aux + mPrevAngle[0]), (xc), (yc)); //rotate it
+                            //matrix.setTranslate((ivSize/2-imageWidth/2),ivSize/2 -imageHeight/2);
+
+                            //Log.v(TAG,String.valueOf(currentAngle_aux)+mPrevAngle[0]);
+
+
+                            //imF.setImageMatrix(matrix);
+
+
+
+                            //animate(currentAngle_aux, currentAngle_aux, pivX, pivY, 0, imF);
+                            objectRotate(currentAngle_aux, (float) (currentAngle_aux + mPrevAngle[0]), pivX, pivY, 0, imF);
+
+
 
                             //Usado para Scale
 
-                            if(fingerTowY > mTouchY){
+                            if (fingerTowY > mTouchY) {
                                 imF.getLayoutParams().height = (int) (mHeingh + (Math.abs(fingerTowY-mTouchY)));
-                            }else{
+                            } else {
                                 imF.getLayoutParams().height = (int) (mHeingh - (Math.abs(fingerTowY-mTouchY)));
                             }
                             imF.requestLayout();
@@ -164,8 +227,8 @@ public class MainActivity extends AppCompatActivity {
                         case MotionEvent.ACTION_POINTER_UP:
 
                             //Usado para la rotacion
-                            animate( 0, 0, 0, imF);
-                            objectRotate(currentAngle_aux, (float) (currentAngle_aux + mPrevAngle[0]),0,imF);
+                            //animate(0, 0, 0, 0, 0, imF);
+                            //objectRotate(currentAngle_aux, (float) (currentAngle_aux + mPrevAngle[0]), pivX, pivY, 0, imF);
                             mPrevAngle[0] = currentAngle_aux + mPrevAngle[0];
                             break;
 
@@ -175,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                 //Si hay un dedo en pantalla
                 else {
 
+
                     float mX = 0;
                     float move_auxX = 0;
                     float movePointX = 0;
@@ -183,38 +247,65 @@ public class MainActivity extends AppCompatActivity {
                     float move_auxY = 0;
                     float movePointY = 0;
 
-                    Log.v(TAG,actionToString(action));
+                    Log.v(TAG, actionToString(action));
 
 
-                    switch(action){
+                    switch (action) {
 
                         case MotionEvent.ACTION_DOWN:
 
-                            prevX = fingerOneX;
+                            prevX = event.getRawX();
                             //-----------------
-                            prevY = fingerOneY;
+                            prevY = event.getRawY();
+
+                            auxRotation = imF.getRotation();
+
+                            Log.d(TAG, "rawX: " +String.valueOf(prevX) );
 
 
                             break;
 
                         case MotionEvent.ACTION_MOVE:
 
-                            mX =  imF.getX();
-                            move_auxX =  (fingerOneX - prevX);
-                            currentX = (fingerOneX - prevX);
-                            movePointX =  (mX + move_auxX);
-                            objectMoveX(movePointX , 0, imF);
+
+                            if ( moveEneable == true) {
+                                mX = imF.getX();
+                                move_auxX = (event.getRawX() - prevX);
+                                currentX = (fingerOneX - prevX);
+                                movePointX = (mX + move_auxX);
+                                objectMoveX(movePointX, 0, imF);
+
+                                prevX = (event.getRawX());
+
+
+
+
+                            }
+
                             //------------------------------
-                            mY =  imF.getY();
-                            move_auxY =  (fingerOneY - prevY);
-                            currentX = (fingerOneY - prevY);
-                            movePointY =  (mY + move_auxY);
-                            objectMoveY(movePointY , 0, imF);
+                            if (moveEneable == true) {
+                                mY = imF.getY();
+                                move_auxY = (event.getRawY() - prevY);
+                                currentX = (fingerOneY - prevY);
+                                movePointY = (mY + move_auxY);
+                                objectMoveY(movePointY, 0, imF);
+                                prevY = event.getRawY();
+
+                            }
+
+                            //Log.d(TAG, "mX: " +String.valueOf(mX) + " mY: " + String.valueOf(mY)
+                             //       + " F1X: " + String.valueOf(fingerOneX) );
+                            Log.d(TAG, "rawX: " +String.valueOf(prevX) );
+
+                            //animationMoveX(movePointX,movePointX,movePointY,movePointY,0,imF);
+                            //imF.setX(movePointX);
+                            //imF.setY(movePointY);
 
 
                             break;
 
                         case MotionEvent.ACTION_UP:
+                            moveEneable = true;
                             break;
                     }
 
@@ -238,9 +329,48 @@ public class MainActivity extends AppCompatActivity {
                 .into(imF);
 
 
+
+
+
+
+        //imF.getLayoutParams().height = lado +1;
+        //imF.getLayoutParams().width = lado + 1;
+        //imF.setImageBitmap(bitmap);
+        //imF.setScaleType(ImageView.ScaleType.MATRIX);
+
+
+
+        //RectF drawableRect = new RectF(0, 0,ivSize , ivSize );
+        //RectF viewRect = new RectF(0, 0, imF.getWidth(), imF.getHeight());
+        //matrix.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+        //matrix.setTranslate((ivSize/2-imageWidth/2),ivSize/2 -imageHeight/2);
+       // imF.setImageMatrix(matrix);
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+
+
+
+    }
+
+
+        @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -267,15 +397,17 @@ public class MainActivity extends AppCompatActivity {
                 RotateAnimation.RELATIVE_TO_SELF, 0.5f,
                 RotateAnimation.RELATIVE_TO_SELF, 0.5f);
 
-        rotateAnim.setDuration(1011);
+        rotateAnim.setDuration(2011);
         rotateAnim.setFillAfter(true);
         iv.startAnimation(rotateAnim);
     }
 
-    private void animate(double fromDegrees, double toDegrees, long durationMillis,  ImageView iv) {
+    private void animate(double fromDegrees, double toDegrees, int pivX, int pivY, long durationMillis,  ImageView iv) {
         final RotateAnimation rotate = new RotateAnimation((float) fromDegrees, (float) toDegrees,
                 RotateAnimation.RELATIVE_TO_SELF, 0.5f,
                 RotateAnimation.RELATIVE_TO_SELF, 0.5f);
+
+
         rotate.setDuration(durationMillis);
         rotate.setFillEnabled(false);
         rotate.setFillAfter(true);
@@ -285,7 +417,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void objectRotate(float fromDegrees, float toDegrees, long duration,ImageView iv){
+    private void objectRotate(float fromDegrees, float toDegrees, int pivX, int pivY, long duration,ImageView iv){
 
         ObjectAnimator rot = ObjectAnimator.ofFloat(iv, "rotation", fromDegrees, toDegrees);
         rot.setDuration(duration);
@@ -293,9 +425,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void animationMove(float translationX, ImageView imageView){
+    private void animationMoveX(float fromX,float toX,float fromY, float toY, long duration, ImageView imageView){
 
+        TranslateAnimation translateAnimation = new TranslateAnimation(fromX, toX, fromY, toY);
+        translateAnimation.setDuration(duration);
+        imageView.startAnimation(translateAnimation);
     }
+
 
     private void objectMoveX(float translationX, long duration, ImageView imageView){
 

@@ -16,5 +16,8 @@
         android:id="@+id/imageView_front"
         android:layout_gravity="center"
         android:adjustViewBounds="true"
+
+
+
         />
 </FrameLayout>
