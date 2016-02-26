@@ -24,6 +24,12 @@
             android:label="@string/title_activity_mask"
             android:theme="@style/AppTheme.NoActionBar">
         </activity>
+        <activity
+            android:name=".CloneActivity"
+            android:label="@string/title_activity_clone"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="landscape">
+        </activity>
     </application>
 
 </manifest>

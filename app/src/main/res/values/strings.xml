@@ -4,4 +4,5 @@
     <string name="title_activity_test_libreria">TestLibreria</string>
     <string name="title_activity_mtcontroller">MTController</string>
     <string name="title_activity_mask">MaskActivity</string>
+    <string name="title_activity_clone">CloneActivity</string>
 </resources>
