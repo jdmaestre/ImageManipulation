@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 /**
@@ -24,6 +25,8 @@ public class MovementsTouchListener {
         final float[] prevY = {0};
         final float[] auxRotation = {0};
         final boolean[] moveEneable = {true};
+
+        final FrameLayout frameLayout = (FrameLayout) imageView.getParent();
 
         imageView.setOnTouchListener(new OnTouchListener() {
             @Override
@@ -76,17 +79,17 @@ public class MovementsTouchListener {
                             //-----------------
                             prevY[0] = event.getRawY();
 
-                            auxRotation[0] = imageView.getRotation();
+                            auxRotation[0] = frameLayout.getRotation();
                             break;
 
                         case  MotionEvent.ACTION_MOVE:
 
                             if (moveEneable[0] == true) {
-                                float mX = imageView.getX();
+                                float mX = frameLayout.getX();
                                 float move_auxX = (event.getRawX() - prevX[0]);
                                 float currentX = (fingerOneX[0] - prevX[0]);
                                 float movePointX = (mX + move_auxX);
-                                objectMoveX(movePointX, 0, imageView);
+                                objectMoveX(movePointX, 0, frameLayout);
 
                                 prevX[0] = (event.getRawX());
 
@@ -95,11 +98,11 @@ public class MovementsTouchListener {
 
                             //------------------------------
                             if (moveEneable[0] == true) {
-                                float mY = imageView.getY();
+                                float mY = frameLayout.getY();
                                 float move_auxY = (event.getRawY() - prevY[0]);
                                 float currentX = (fingerOneY[0] - prevY[0]);
                                 float movePointY = (mY + move_auxY);
-                                objectMoveY(movePointY, 0, imageView);
+                                objectMoveY(movePointY, 0, frameLayout);
                                 prevY[0] = event.getRawY();
 
                             }
@@ -118,14 +121,14 @@ public class MovementsTouchListener {
 
     }
 
-    private void objectMoveX(float translationX, long duration, ImageView imageView){
+    private void objectMoveX(float translationX, long duration, FrameLayout imageView){
 
         ObjectAnimator move = ObjectAnimator.ofFloat(imageView, "x", translationX);
         move.setDuration(duration);
         move.start();
     }
 
-    private void objectMoveY(float translationY, long duration, ImageView imageView){
+    private void objectMoveY(float translationY, long duration, FrameLayout imageView){
 
         ObjectAnimator move = ObjectAnimator.ofFloat(imageView, "y", translationY);
         move.setDuration(duration);

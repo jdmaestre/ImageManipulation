@@ -77,10 +77,14 @@ public class CloneActivity extends AppCompatActivity {
 
         final Path path= new Path();
         final Path pathMoved = new Path();
+        final Path drawPath = new Path();
 
         final Paint paint = new Paint();
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(Color.BLUE);
+        paint.setStrokeWidth(10);
+
+
 
 
         //frameLayout.addView(clonedImage);
@@ -96,6 +100,8 @@ public class CloneActivity extends AppCompatActivity {
                 int id = 0;
                 int toCloneImageWidht = toCloneImage.getWidth();
                 int toCloneImageHeight = toCloneImage.getHeight();
+                float ratioX = (float)image.getWidth()/(float)toCloneImage.getWidth();
+                float ratioY = (float)image.getHeight()/(float)toCloneImage.getHeight();
 
                 int pointerCount = event.getPointerCount();
                 for (int i = 0; i < pointerCount; i++) {
@@ -141,13 +147,16 @@ public class CloneActivity extends AppCompatActivity {
                         puntoInicioX = fingerOneX;
                         puntoInicioY = fingerOneY;
                         path.moveTo(fingerOneX, fingerOneY);
+                        drawPath.moveTo(fingerOneX*ratioX, fingerOneY*ratioY);
+
 
                         lowerX = fingerOneX;
                         higherX = fingerOneX;
                         lowerY = fingerOneY;
                         higherY = fingerOneY;
 
-                        imageM = image.copy(Bitmap.Config.ARGB_8888, true);
+                        //imageM = Bitmap.createScaledBitmap(image, toCloneImage.getWidth(), toCloneImage.getHeight(), false);
+                        imageM = image.copy(Bitmap.Config.ARGB_8888,true);
                         canvas = new Canvas(imageM);
 
 
@@ -160,7 +169,9 @@ public class CloneActivity extends AppCompatActivity {
                             PointF pointF = new PointF();
                             pointF.set(fingerOneX, fingerOneY);
                             pathArray.add(pointF);
-                            path.lineTo(fingerOneX,fingerOneY);
+                            path.lineTo(fingerOneX, fingerOneY);
+                            drawPath.lineTo(fingerOneX*ratioX,fingerOneY*ratioY);
+                            Log.d(TAG, String.valueOf(fingerOneX*ratioX) + "     " + String.valueOf(fingerOneY*ratioY));
 
                             //Encontrar tamaño de la imagen clonada
                             if (fingerOneX > higherX){
@@ -181,7 +192,8 @@ public class CloneActivity extends AppCompatActivity {
 
                         }
 
-                        canvas.drawPath(path,paint);
+                        canvas.drawPath(drawPath,paint);
+
                         toCloneImage.setImageBitmap(imageM);
 
 
@@ -189,10 +201,11 @@ public class CloneActivity extends AppCompatActivity {
 
                     case MotionEvent.ACTION_UP:
 
+
+                        final Bitmap imageresized = Bitmap.createScaledBitmap(image, toCloneImage.getWidth(),
+                                toCloneImage.getHeight(), false);
+
                         toCloneImage.setImageBitmap(image);
-
-
-                        final Bitmap imageresized = Bitmap.createScaledBitmap(image, toCloneImage.getWidth(), toCloneImage.getHeight(), false);
 
                         path.lineTo(puntoInicioX, puntoInicioY);
 
@@ -225,6 +238,7 @@ public class CloneActivity extends AppCompatActivity {
                         frameLayout.addView(clonedImage);
                         path.reset();
                         pathMoved.reset();
+                        drawPath.reset();;
                         pathArray = new ArrayList<PointF>();
                         break;
                 }
