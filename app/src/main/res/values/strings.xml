@@ -5,4 +5,5 @@
     <string name="title_activity_mtcontroller">MTController</string>
     <string name="title_activity_mask">MaskActivity</string>
     <string name="title_activity_clone">CloneActivity</string>
+    <string name="title_activity_fotoguias">FotoguiasActivity</string>
 </resources>
