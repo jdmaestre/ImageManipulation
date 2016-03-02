@@ -6,4 +6,6 @@
     <string name="title_activity_mask">MaskActivity</string>
     <string name="title_activity_clone">CloneActivity</string>
     <string name="title_activity_fotoguias">FotoguiasActivity</string>
+    <string name="title_activity_activity_zoom">ActivityZoom</string>
+    <string name="title_activity_zoom">ZoomActivity</string>
 </resources>

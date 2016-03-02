@@ -4,8 +4,8 @@ import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -43,6 +43,10 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
     float fingerOneY = -1;
     float fingerTowX = -1;
     float fingerTowY = -1;
+    float rawX = 0;
+    float rawY = 0;
+    float rawX2 = 0;
+    float rawY2 = 0;
     float prevXmove = -1;
 
     boolean moveEneable = true;
@@ -51,7 +55,8 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
 
     private float mLastScaleFactor = 0;
     private float mLastScaleFactorSmall = 0;
-    private float mTouchY;
+    private float mFingersDist = 0;
+    private float mPrevFingersDist = 0;
     private static final float MIN_SCALE = 0.5f;
     private static final float MAX_SCALE = 4f;
 
@@ -62,7 +67,7 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Intent intent = new Intent(this, FotoguiasActivity.class);
+        Intent intent = new Intent(this, ZoomActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
@@ -100,14 +105,11 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
             public void onClick(View view) {
 
 
-                //fromdegrees[0] = todegrees[0];
-                //todegrees[0] = todegrees[0] - 90;
-
                 fromX[0] = toX[0];
                 toX[0] = (float) (toX[0] + 0.1);
                 fromY[0] = toY[0];
                 toY[0] = (float) (toY[0] + 0.1);
-                rotate(0, 90, imF);
+                //rotate(0, 90, imF);
 
                 double x = imF.getHeight();
                 double y = imF.getWidth();
@@ -142,12 +144,26 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                         fingerOneX = event.getX(pointerIndex);
                         fingerOneY = event.getY(pointerIndex);
 
+                        rawX = event.getRawX();
+                        rawY = event.getRawY();
 
                     }
 
                     if (id == 1) {
                         fingerTowX = event.getX(pointerIndex);
                         fingerTowY = event.getY(pointerIndex);
+
+                        //Codigo para obtener RawX & RawY de otros pointer diferentes al 1
+                        int location[] = {0,0};
+                        v.getLocationOnScreen(location);
+
+                        double angle=Math.toDegrees(Math.atan2(fingerTowY, fingerTowX));
+                        angle += v.getRotation();
+
+                        final float length= PointF.length(fingerTowX, fingerTowY);
+
+                        rawX2=(float)(length*Math.cos(Math.toRadians(angle)))+location[0];
+                        rawY2=(float)(length*Math.sin(Math.toRadians(angle)))+location[1];
                     }
 
                 }
@@ -155,29 +171,20 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                 //Si hay dos dedos en pantalla
                 if (event.getPointerCount() > 1) {
 
-                    //Log.d(TAG, String.valueOf(id));
-                    //Log.d(TAG, actionToString(action));
-                    final int xc = imF.getWidth() / 2;
-                    final int yc = imF.getHeight() / 2;
-
 
                     switch (action) {
                         case MotionEvent.ACTION_POINTER_DOWN:
 
                             //Usado para la rotacion
-                            mCurrAngle[0] = Math.toDegrees(Math.atan2(fingerTowX - xc, yc - fingerTowY));
+                            mCurrAngle[0] = Math.toDegrees(Math.atan2(rawY - rawY2, rawX - rawX2));
                             angle_aux = (float) (mCurrAngle[0]);
-
-                            pivX = (int) (xc);
-                            pivY = (int) (yc);
 
                             //Usado para el zoom
                             zoomAuxX = fingerTowX;
                             zoomAuxY = fingerTowY;
 
                             //Usado para scale
-                            mLastScaleFactor = 0;
-                            mTouchY = fingerTowY;
+                            mPrevFingersDist = (float) Math.sqrt(Math.pow(rawX - rawX2, 2) + Math.pow(rawY- rawY2, 2));
                             mHeingh = imF.getHeight();
 
                             //Usado para el movimiento
@@ -188,30 +195,20 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
 
                             //Usado para la rotacion
 
-
-                            mCurrAngle[0] = Math.toDegrees(Math.atan2(fingerTowX - xc, yc - fingerTowY));
+                            //Formula angulo en un punt teniendo como pivote el otro punto Math.toDegrees(Math.atan2(Y - Y2, X - X2));
+                            mCurrAngle[0] = Math.toDegrees(Math.atan2(rawY - rawY2, rawX - rawX2));
                             currentAngle_aux = (float) (mCurrAngle[0] - angle_aux);
-                            //Matrix matrix = new Matrix();
-
-                            //matrix.setRotate((float) (currentAngle_aux + mPrevAngle[0]), (xc), (yc)); //rotate it
-                            //matrix.setTranslate((ivSize/2-imageWidth/2),ivSize/2 -imageHeight/2);
-
-                            //Log.v(TAG,String.valueOf(currentAngle_aux)+mPrevAngle[0]);
-
-
-                            //imF.setImageMatrix(matrix);
-
-
-                            //animate(currentAngle_aux, currentAngle_aux, pivX, pivY, 0, imF);
-                            objectRotate(currentAngle_aux, (float) (currentAngle_aux + mPrevAngle[0]), pivX, pivY, 0, imF);
-
+                            v.setRotation((float) (currentAngle_aux + mPrevAngle[0]));
 
                             //Usado para Scale
+                            //Se usa la distancia entre los dedos para aumentar o dismminuir el tamaño
+                            //Formula distancia entre dos puntos Math.sqrt(Math.pow(X - 2, 2) + Math.pow(Y- 2, 2));
+                            mFingersDist = (float) Math.sqrt(Math.pow(rawX - rawX2, 2) + Math.pow(rawY- rawY2, 2));
 
-                            if (fingerTowY > mTouchY) {
-                                imF.getLayoutParams().height = (int) (mHeingh + (Math.abs(fingerTowY - mTouchY)));
+                            if (mFingersDist > mPrevFingersDist) {
+                                imF.getLayoutParams().height = (int) (mHeingh + (Math.abs(mPrevFingersDist - mFingersDist)));
                             } else {
-                                imF.getLayoutParams().height = (int) (mHeingh - (Math.abs(fingerTowY - mTouchY)));
+                                imF.getLayoutParams().height = (int) (mHeingh - (Math.abs(mPrevFingersDist - mFingersDist)));
                             }
                             imF.requestLayout();
                             break;
@@ -219,8 +216,6 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                         case MotionEvent.ACTION_POINTER_UP:
 
                             //Usado para la rotacion
-                            //animate(0, 0, 0, 0, 0, imF);
-                            //objectRotate(currentAngle_aux, (float) (currentAngle_aux + mPrevAngle[0]), pivX, pivY, 0, imF);
                             mPrevAngle[0] = currentAngle_aux + mPrevAngle[0];
                             break;
 
@@ -246,15 +241,9 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
 
                         case MotionEvent.ACTION_DOWN:
 
-                            prevX = event.getRawX();
+                            prevX = rawX;
                             //-----------------
-                            prevY = event.getRawY();
-
-                            auxRotation = imF.getRotation();
-
-                            Log.d(TAG, "rawX: " + String.valueOf(prevX));
-
-
+                            prevY = rawY;
                             break;
 
                         case MotionEvent.ACTION_MOVE:
@@ -266,7 +255,6 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                                 currentX = (fingerOneX - prevX);
                                 movePointX = (mX + move_auxX);
                                 objectMoveX(movePointX, 0, imF);
-
                                 prevX = (event.getRawX());
 
 
@@ -282,15 +270,6 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                                 prevY = event.getRawY();
 
                             }
-
-                            //Log.d(TAG, "mX: " +String.valueOf(mX) + " mY: " + String.valueOf(mY)
-                            //       + " F1X: " + String.valueOf(fingerOneX) );
-                            Log.d(TAG, "rawX: " + String.valueOf(prevX));
-
-                            //animationMoveX(movePointX,movePointX,movePointY,movePointY,0,imF);
-                            //imF.setX(movePointX);
-                            //imF.setY(movePointY);
-
 
                             break;
 
@@ -317,34 +296,6 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                 .load(R.drawable.square).centerCrop()
                 .resize(500, 500)
                 .into(imF);
-
-
-
-
-
-
-        //imF.getLayoutParams().height = lado +1;
-        //imF.getLayoutParams().width = lado + 1;
-        //imF.setImageBitmap(bitmap);
-        //imF.setScaleType(ImageView.ScaleType.MATRIX);
-
-
-
-        //RectF drawableRect = new RectF(0, 0,ivSize , ivSize );
-        //RectF viewRect = new RectF(0, 0, imF.getWidth(), imF.getHeight());
-        //matrix.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
-        //matrix.setTranslate((ivSize/2-imageWidth/2),ivSize/2 -imageHeight/2);
-       // imF.setImageMatrix(matrix);
-
-
-
-
-
-
-
-
-
-
 
 
 
