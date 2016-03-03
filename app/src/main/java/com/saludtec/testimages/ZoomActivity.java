@@ -2,9 +2,9 @@ package com.saludtec.testimages;
 
 import android.animation.ObjectAnimator;
 import android.graphics.Color;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -12,17 +12,22 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 public class ZoomActivity extends AppCompatActivity {
 
     private String TAG = ZoomActivity.class.getSimpleName();
 
-    private int layoutOrgininalWidth = 0;
-    private int layoutOriginalHeight = 0;
+    private float layoutOrgininalWidth = 0;
+    private float layoutOriginalHeight = 0;
+    private float layoutDiagonal = 0;
+    private float scale = 1;
+    private float scaleLayoutDiagonal = 0;
+    private float scaleOffset = 0;
+    private float scale_aux = 0;
+    private float pixelsOffset = 0;
+
 
     float restrictedLeftX = 0;
     float restrictedRightX = -restrictedLeftX;
@@ -37,15 +42,30 @@ public class ZoomActivity extends AppCompatActivity {
 
     boolean getXY = false;
 
+
+    int id = -1;
+    float fingerOneX = 0;
+    float fingerOneY = 0;
+    float fingerTowX = 0;
+    float fingerTowY = 0;
+    float rawX = 0;
+    float rawY = 0;
+    float rawX2 = 0;
+    float rawY2 = 0;
+
+    float mFingersDist = 0;
+    float mPrevFingersDist = 0;
+
+
+    //Mover variables
+    float prevX = 0;
+    float prevY = 0;
+    float auxRotation = 0;
+    boolean moveEneable = true;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_zoom);
-
-
-
-
-
-
 
     }
 
@@ -58,6 +78,7 @@ public class ZoomActivity extends AppCompatActivity {
         final FrameLayout frameLayout = (FrameLayout)findViewById(R.id.zoomlayout);
         layoutOrgininalWidth = frameLayout.getWidth();
         layoutOriginalHeight = frameLayout.getHeight();
+        layoutDiagonal = (int) Math.sqrt(Math.pow(layoutOrgininalWidth, 2) + Math.pow(layoutOriginalHeight, 2));
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -82,23 +103,9 @@ public class ZoomActivity extends AppCompatActivity {
         frontImage.setImageResource(R.drawable.chelsea);
         backImage.setImageResource(R.drawable.square);
 
-
         backImage.setBackgroundColor(Color.GRAY);
-        frameLayout.setBackgroundColor(Color.BLUE);
+        frameLayout.setBackgroundColor(Color.BLACK);
 
-
-
-        final int[] id = {-1};
-        final float[] fingerOneX = {0};
-        final float[] fingerOneY = {0};
-        final float[] fingerTowX = {0};
-        final float[] fingerTowY = {0};
-
-        //Mover variables
-        final float[] prevX = {0};
-        final float[] prevY = {0};
-        final float[] auxRotation = {0};
-        final boolean[] moveEneable = {true};
 
         frameLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -109,24 +116,41 @@ public class ZoomActivity extends AppCompatActivity {
                     layoutY = frameLayout.getY();
                     getXY = true;
                 }
+                int action = event.getActionMasked();
+
+                Log.v(TAG, actionToString(event.getActionMasked()));
 
                 //Para conseguir la posicion de los dedos
                 int pointerCount = event.getPointerCount();
                 for (int i = 0; i < pointerCount; i++) {
 
                     int pointerIndex = i;
-                    id[0] = event.getPointerId(pointerIndex);
+                    id = event.getPointerId(pointerIndex);
 
-                    if (id[0] == 0) {
-                        fingerOneX[0] = event.getX(pointerIndex);
-                        fingerOneY[0] = event.getY(pointerIndex);
+                    if (id == 0) {
+                        fingerOneX = event.getX(pointerIndex);
+                        fingerOneY = event.getY(pointerIndex);
 
+                        rawX = event.getRawX();
+                        rawY = event.getRawY();
 
                     }
 
-                    if (id[0] == 1) {
-                        fingerTowX[0] = event.getX(pointerIndex);
-                        fingerTowY[0] = event.getY(pointerIndex);
+                    if (id == 1) {
+                        fingerTowX = event.getX(pointerIndex);
+                        fingerTowY = event.getY(pointerIndex);
+
+                        //Codigo para obtener RawX & RawY de otros pointers diferentes al 1
+                        int location[] = {0,0};
+                        v.getLocationOnScreen(location);
+
+                        double angle=Math.toDegrees(Math.atan2(fingerTowY, fingerTowX));
+                        angle += v.getRotation();
+
+                        final float length= PointF.length(fingerTowX, fingerTowY);
+
+                        rawX2=(float)(length*Math.cos(Math.toRadians(angle)))+location[0];
+                        rawY2=(float)(length*Math.sin(Math.toRadians(angle)))+location[1];
                     }
 
                 }
@@ -134,48 +158,96 @@ public class ZoomActivity extends AppCompatActivity {
                 if (event.getPointerCount() > 1){
                     //Eventos multitouch
 
-                    switch (event.getAction()){
+                    switch (action){
                         case MotionEvent.ACTION_POINTER_DOWN:
                             //Usado para movimiento
-                            moveEneable[0] = true;
+                            moveEneable= false;
+                            Log.v(TAG, String.valueOf(moveEneable));
+
+                            //Usado para escalar
+                            mPrevFingersDist = (float) Math.sqrt(Math.pow(rawX - rawX2, 2) + Math.pow(rawY- rawY2, 2));
+
                             break;
 
                         case  MotionEvent.ACTION_MOVE:
+
+                            mFingersDist = (float) Math.sqrt(Math.pow(rawX - rawX2, 2) + Math.pow(rawY- rawY2, 2));
+
+                            pixelsOffset = mFingersDist - mPrevFingersDist;
+                            scaleLayoutDiagonal = (layoutDiagonal + (mFingersDist - mPrevFingersDist));
+                            scaleOffset = scaleLayoutDiagonal/layoutDiagonal;
+                            scale = scaleOffset + scale_aux;
+                            v.setScaleX(scale);
+                            v.setScaleY(scale);
+
+
                             break;
 
                         case MotionEvent.ACTION_POINTER_UP:
+                            scale_aux = (scale -1);
+                            if (scale < 1){
+                                v.setScaleX(1);
+                                v.setScaleY(1);
+                                scale_aux = 0;
+                            }
+
+                            if (v.getX() > restrictedLeftX + layoutX){
+                                //v.setX(restrictedLeftX-1);
+                                objectMoveX(restrictedLeftX , 0, frameLayout);
+                            }else{
+                                if (v.getX() < restrictedRightX + layoutX){
+                                    //v.setX(restrictedRightX + 1);
+                                    objectMoveX(restrictedRightX, 0, frameLayout);
+                                }
+                            }
+
+
+
+                            if (v.getY() > restrictedTopY + layoutY){
+                                //v.setY(restrictedTopY - 1);
+                                objectMoveY(restrictedTopY + layoutY , 0, frameLayout);
+                            }else{
+                                if (v.getY() < restrictedButtonY + layoutY){
+                                    //v.setY(restrictedButtonY + 1);
+                                    objectMoveY(restrictedButtonY +layoutY , 0, frameLayout);
+                                }
+
+                            }
+
+
                             break;
                     }
 
                 }else{
                     //Eventos singletouch
 
-                    switch (event.getAction()){
+                    switch (action){
                         case MotionEvent.ACTION_DOWN:
-                            prevX[0] = event.getRawX();
+                            prevX = event.getRawX();
                             //-----------------
-                            prevY[0] = event.getRawY();
+                            prevY = event.getRawY();
 
-                            auxRotation[0] = frameLayout.getRotation();
+                            auxRotation = frameLayout.getRotation();
                             break;
 
                         case  MotionEvent.ACTION_MOVE:
 
 
                             scalePX = (v.getScaleX() - 1)/2;
-                            restrictedLeftX = scalePX * v.getWidth();
+                            restrictedLeftX = scalePX * layoutOrgininalWidth;
                             restrictedRightX = -restrictedLeftX;
 
 
-                            if (moveEneable[0] == true && v.getX() < restrictedLeftX && v.getX() > restrictedRightX) {
+                            if (moveEneable == true && (v.getX() <= restrictedLeftX) && (v.getX() >= restrictedRightX)) {
                                 float mX = frameLayout.getX();
-                                float move_auxX = (event.getRawX() - prevX[0]);
-                                float currentX = (fingerOneX[0] - prevX[0]);
+                                float move_auxX = (event.getRawX() - prevX);
+                                float currentX = (fingerOneX- prevX);
                                 float movePointX = (mX + move_auxX);
                                 //objectMoveX(movePointX, 0, frameLayout);
                                 v.setX(movePointX);
 
-                                prevX[0] = (event.getRawX());
+                                prevX = (event.getRawX());
+                                Log.v(TAG, "Movimiento en el layout");
 
 
                             }
@@ -184,25 +256,21 @@ public class ZoomActivity extends AppCompatActivity {
                             //------------------------------
 
                             scalePY = (v.getScaleY() - 1)/2;
-                            restrictedTopY = scalePY * v.getHeight();
+                            restrictedTopY = scalePY * layoutOriginalHeight;
                             restrictedButtonY = -restrictedTopY;
 
-                            if (moveEneable[0] == true && v.getY() < (restrictedTopY + layoutY) && v.getY() > (restrictedButtonY + layoutY) ) {
+                            if (moveEneable == true && v.getY() <= (restrictedTopY + layoutY) && v.getY() >= (restrictedButtonY + layoutY) ) {
                                 float mY = frameLayout.getY();
-                                float move_auxY = (event.getRawY() - prevY[0]);
-                                float currentX = (fingerOneY[0] - prevY[0]);
+                                float move_auxY = (event.getRawY() - prevY);
+                                float currentX = (fingerOneY - prevY);
                                 float movePointY = (mY + move_auxY);
                                 //objectMoveY(movePointY, 0, frameLayout);
                                 v.setY(movePointY);
 
-                                prevY[0] = event.getRawY();
+                                prevY = event.getRawY();
+                                Log.v(TAG, String.valueOf(moveEneable));
 
                             }
-
-                            Log.d(TAG,String.valueOf(frameLayout.getX())  +"   "+String.valueOf(frameLayout.getY())  +" || "
-                            + String.valueOf(restrictedLeftX) + "    " + String.valueOf(restrictedRightX) +" || "
-                                    + String.valueOf(restrictedTopY) + "    " + String.valueOf(restrictedButtonY) +" || "
-                                    + String.valueOf(v.getWidth()) + "    " + String.valueOf(v.getHeight()) );
 
                             break;
 
@@ -210,11 +278,11 @@ public class ZoomActivity extends AppCompatActivity {
 
                             if (v.getX() > restrictedLeftX + layoutX){
                                 //v.setX(restrictedLeftX-1);
-                                objectMoveX(restrictedLeftX - 1, 1000, frameLayout);
+                                objectMoveX(restrictedLeftX , 0, frameLayout);
                             }else{
                                 if (v.getX() < restrictedRightX + layoutX){
                                     //v.setX(restrictedRightX + 1);
-                                    objectMoveX(restrictedRightX+1, 1000, frameLayout);
+                                    objectMoveX(restrictedRightX, 0, frameLayout);
                                 }
                             }
 
@@ -222,16 +290,15 @@ public class ZoomActivity extends AppCompatActivity {
 
                             if (v.getY() > restrictedTopY + layoutY){
                                 //v.setY(restrictedTopY - 1);
-                                objectMoveY(restrictedTopY + layoutY - 1, 1000, frameLayout);
+                                objectMoveY(restrictedTopY + layoutY , 0, frameLayout);
                             }else{
                                 if (v.getY() < restrictedButtonY + layoutY){
                                     //v.setY(restrictedButtonY + 1);
-                                    objectMoveY(restrictedButtonY +layoutY + 1, 1000, frameLayout);
+                                    objectMoveY(restrictedButtonY +layoutY , 0, frameLayout);
                                 }
 
                             }
-
-
+                            moveEneable = true;
                             break;
                     }
 
@@ -257,6 +324,28 @@ public class ZoomActivity extends AppCompatActivity {
         move.setDuration(duration);
         move.start();
     }
+
+    public static String actionToString(int action) {
+        switch (action) {
+
+            case MotionEvent.ACTION_DOWN:
+                return "Down";
+            //case MotionEvent.ACTION_MOVE:
+            //    return "Move";
+            case MotionEvent.ACTION_POINTER_DOWN:
+                return "Pointer Down";
+            case MotionEvent.ACTION_UP:
+                return "Up";
+            case MotionEvent.ACTION_POINTER_UP:
+                return "Pointer Up";
+            case MotionEvent.ACTION_OUTSIDE:
+                return "Outside";
+            case MotionEvent.ACTION_CANCEL:
+                return "Cancel";
+        }
+        return "";
+    }
+
 
 
 
