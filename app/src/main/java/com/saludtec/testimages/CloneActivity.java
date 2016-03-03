@@ -53,22 +53,33 @@ public class CloneActivity extends AppCompatActivity {
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
-
         setContentView(R.layout.activity_clone);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-       // setSupportActionBar(toolbar);
 
-        /*
+
+
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        //Here you can get the size!
+        final FrameLayout frameLayout = (FrameLayout)findViewById(R.id.CloneContent);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        // setSupportActionBar(toolbar);
+
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+
+                frameLayout.setScaleX((float) 1.5);
+                frameLayout.setScaleY((float) 1.5);
+                Log.d(TAG, String.valueOf(frameLayout.getX()));
+
             }
-        });*/
+        });
+
         final ImageView toCloneImage = (ImageView)findViewById(R.id.toCloneImage);
         toCloneImage.setImageResource(R.drawable.landscapes);
         final Bitmap image = ((BitmapDrawable)toCloneImage.getDrawable()).getBitmap();
@@ -86,9 +97,6 @@ public class CloneActivity extends AppCompatActivity {
 
 
 
-
-        //frameLayout.addView(clonedImage);
-        //frameLayout.addView(clonedImage1);
 
 
 
@@ -250,13 +258,6 @@ public class CloneActivity extends AppCompatActivity {
                 return true;
             }
         });
-
-
-    }
-
-    protected void onStart() {
-        super.onStart();
-
 
 
 
