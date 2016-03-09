@@ -70,10 +70,10 @@ public class ZoomActivity extends AppCompatActivity {
     }
 
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        //Here you can get the size!
+        @Override
+        public void onWindowFocusChanged(boolean hasFocus) {
+            super.onWindowFocusChanged(hasFocus);
+            //Here you can get the size!
 
         final FrameLayout frameLayout = (FrameLayout)findViewById(R.id.zoomlayout);
         layoutOrgininalWidth = frameLayout.getWidth();
@@ -165,13 +165,13 @@ public class ZoomActivity extends AppCompatActivity {
                             Log.v(TAG, String.valueOf(moveEneable));
 
                             //Usado para escalar
-                            mPrevFingersDist = (float) Math.sqrt(Math.pow(rawX - rawX2, 2) + Math.pow(rawY- rawY2, 2));
+                            mPrevFingersDist = (float) Math.sqrt(Math.pow(fingerOneX - fingerTowX, 2) + Math.pow(fingerOneY- fingerTowY, 2));
 
                             break;
 
                         case  MotionEvent.ACTION_MOVE:
 
-                            mFingersDist = (float) Math.sqrt(Math.pow(rawX - rawX2, 2) + Math.pow(rawY- rawY2, 2));
+                            mFingersDist = (float) Math.sqrt(Math.pow(fingerOneX - fingerTowX, 2) + Math.pow(fingerOneY- fingerTowY, 2));
 
                             pixelsOffset = mFingersDist - mPrevFingersDist;
                             scaleLayoutDiagonal = (layoutDiagonal + (mFingersDist - mPrevFingersDist));

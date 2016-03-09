@@ -1,10 +1,8 @@
 package com.saludtec.testimages;
 
-import android.app.ActionBar;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -16,8 +14,9 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 /**
  * Created by saludtec on 25/02/16.
@@ -29,6 +28,7 @@ public class ClonedImage extends FrameLayout{
     private ImageView iv_delete = new ImageView(getContext());
     private ImageView clonedImage = new ImageView(getContext());
     private Paint paint;
+    private ArrayList<View> mViews = new ArrayList<View>();
     MovementsTouchListener mMovementsTouchListener = new MovementsTouchListener();
 
     public ClonedImage(Context context, int sizeX,int sizeY, int puntoInicioX, int puntoInicioY, Bitmap bitmap, Path path) {
@@ -76,8 +76,13 @@ public class ClonedImage extends FrameLayout{
         this.addView(clonedImage);
         this.addView(iv_delete, iv_delete_params);
 
+        // ArrayList Views to hide when double tap
+        mViews.add(iv_delete);
 
-        mMovementsTouchListener.RotateResizeMove(clonedImage);
+
+
+        //mMovementsTouchListener.ClonedImage((FrameLayout) clonedImage.getParent(), mViews, context);
+        mMovementsTouchListener.Implant((FrameLayout) clonedImage.getParent(),context);
 
         iv_delete.setOnClickListener(new OnClickListener() {
             @Override
@@ -96,6 +101,8 @@ public class ClonedImage extends FrameLayout{
         float px = dp * (metrics.densityDpi / 160f);
         return (int)px;
     }
+
+
 
 
 }

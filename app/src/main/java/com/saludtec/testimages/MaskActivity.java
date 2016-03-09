@@ -94,7 +94,7 @@ public class MaskActivity extends AppCompatActivity {
                         canvas.drawPath(path, clear);
                         imageView.setImageBitmap(mutableBitmap);
                         path.reset();
-                        //movementsTouchListener.RotateResizeMove(imageView);
+                        //movementsTouchListener.ClonedImage(imageView);
                         break;
                 }
 

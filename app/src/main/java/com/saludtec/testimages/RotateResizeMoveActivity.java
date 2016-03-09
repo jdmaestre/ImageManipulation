@@ -18,6 +18,7 @@ import android.view.MenuItem;
 import android.view.animation.RotateAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -60,6 +61,9 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
     private static final float MIN_SCALE = 0.5f;
     private static final float MAX_SCALE = 4f;
 
+    boolean mHasDoubleClicked = false;
+    long lastPressTime = 0;
+
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,7 +71,7 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Intent intent = new Intent(this, ZoomActivity.class);
+        Intent intent = new Intent(this, CloneActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
@@ -146,6 +150,8 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
 
                         rawX = event.getRawX();
                         rawY = event.getRawY();
+
+
 
                     }
 
@@ -236,7 +242,6 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
 
                     Log.v(TAG, actionToString(action));
 
-
                     switch (action) {
 
                         case MotionEvent.ACTION_DOWN:
@@ -244,7 +249,21 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                             prevX = rawX;
                             //-----------------
                             prevY = rawY;
+
+                            //Double tap event
+                            final long DOUBLE_PRESS_INTERVAL = 350; // in millis
+                            // If double click...
+                            long pressTime = event.getDownTime();
+                            Log.v(TAG, String.valueOf(pressTime));
+                            if (pressTime - lastPressTime <= DOUBLE_PRESS_INTERVAL) {
+                                Toast.makeText(getApplicationContext(), "Double Click Event", Toast.LENGTH_SHORT).show();
+                                mHasDoubleClicked = true;
+                            }
+                            lastPressTime = pressTime;
+
                             break;
+
+
 
                         case MotionEvent.ACTION_MOVE:
 
@@ -277,6 +296,10 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
                             moveEneable = true;
                             break;
                     }
+
+
+
+
 
 
                 }

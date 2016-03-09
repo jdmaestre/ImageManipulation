@@ -8,4 +8,5 @@
     <string name="title_activity_fotoguias">FotoguiasActivity</string>
     <string name="title_activity_activity_zoom">ActivityZoom</string>
     <string name="title_activity_zoom">ZoomActivity</string>
+    <string name="title_activity_bitmap_mesh_acivity">BitmapMeshAcivity</string>
 </resources>
