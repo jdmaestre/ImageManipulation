@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.saludtec.testimages.Main2Activity"
+    >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mover-Girar-Escalar"
+        android:id="@+id/moveRotateScaleButton"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clonar"
+        android:id="@+id/cloneButton"
+        android:layout_below="@+id/moveRotateScaleButton"
+        android:layout_alignRight="@+id/moveRotateScaleButton"
+        android:layout_alignEnd="@+id/moveRotateScaleButton"
+        android:layout_alignLeft="@+id/moveRotateScaleButton"
+        android:layout_alignStart="@+id/moveRotateScaleButton"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Zoom"
+        android:id="@+id/zoomButton"
+        android:layout_below="@+id/cloneButton"
+        android:layout_alignLeft="@+id/cloneButton"
+        android:layout_alignStart="@+id/cloneButton"
+        android:layout_alignRight="@+id/cloneButton"
+        android:layout_alignEnd="@+id/cloneButton"/>
+
+</RelativeLayout>

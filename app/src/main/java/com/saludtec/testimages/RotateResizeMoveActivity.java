@@ -71,11 +71,6 @@ public class RotateResizeMoveActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Intent intent = new Intent(this, CloneActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-
         final ImageView imB = (ImageView) findViewById(R.id.imageView_back);
         final ImageView imF = (ImageView) findViewById(R.id.imageView_front);
         final Matrix matrix = new Matrix();
